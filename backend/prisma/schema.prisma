@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  displayName  String?  @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  bio          String?
+
+  // For future OAuth integration
+  email           String?
+  socialProvider  String? @map("social_provider")
+  socialUserId    String? @map("social_user_id")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  comments             Comment[]
+  userDocuments        UserDocument[]
+  followers            Subscription[] @relation("Following")
+  following            Subscription[] @relation("Follower")
+  socialMediaComments  SocialMediaComment[]
+
+  @@map("users")
+}
+
+model Text {
+  id        String   @id @default(uuid())
+  title     String
+  author    String?
+  isbn      String?
+  type      String?
+  edition   String?
+  url       String?
+  metadata  String?  // JSON stored as string in SQLite
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comments      Comment[]
+  userDocuments UserDocument[]
+
+  @@map("texts")
+}
+
+model UserDocument {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  textId       String    @map("text_id")
+  fileUrl      String?   @map("file_url")
+  uploadDate   DateTime  @default(now()) @map("upload_date")
+  lastAccessed DateTime? @map("last_accessed")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text Text @relation(fields: [textId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, textId])
+  @@map("user_documents")
+}
+
+model Comment {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  textId          String   @map("text_id")
+
+  // Position data
+  chapter         String?
+  pageNumber      Int?     @map("page_number")
+  paragraphNumber Int?     @map("paragraph_number")
+  characterOffset Int?     @map("character_offset")
+
+  // Text anchoring
+  selectedText    String?  @map("selected_text")
+  contextBefore   String?  @map("context_before")
+  contextAfter    String?  @map("context_after")
+  fingerprint     String?
+
+  // Content
+  commentText     String   @map("comment_text")
+  isPublic        Boolean  @default(true) @map("is_public")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text                Text                  @relation(fields: [textId], references: [id], onDelete: Cascade)
+  socialMediaComments SocialMediaComment[]
+
+  @@index([textId])
+  @@index([userId])
+  @@index([fingerprint])
+  @@map("comments")
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("subscriptions")
+}
+
+model SocialMediaComment {
+  id                   String    @id @default(uuid())
+  socialMediaPlatform  String    @map("social_media_platform")
+  socialMediaUserId    String    @map("social_media_user_id")
+  socialMediaPostId    String    @unique @map("social_media_post_id")
+
+  readerId             String?   @map("reader_id")
+
+  // Raw data
+  rawCommentText       String    @map("raw_comment_text")
+  postUrl              String?   @map("post_url")
+
+  // Parsed data
+  parsedTitle          String?   @map("parsed_title")
+  parsedChapter        String?   @map("parsed_chapter")
+  parsedPage           Int?      @map("parsed_page")
+  parsedParagraph      Int?      @map("parsed_paragraph")
+  parsedQuote          String?   @map("parsed_quote")
+  parsedComment        String?   @map("parsed_comment")
+
+  // Processing
+  isParsed             Boolean   @default(false) @map("is_parsed")
+  parsingError         String?   @map("parsing_error")
+
+  commentId            String?   @map("comment_id")
+
+  timestamp            DateTime
+  importedAt           DateTime  @default(now()) @map("imported_at")
+
+  reader  User?    @relation(fields: [readerId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+
+  @@index([socialMediaPlatform])
+  @@index([readerId])
+  @@index([timestamp])
+  @@map("social_media_comments")
+}

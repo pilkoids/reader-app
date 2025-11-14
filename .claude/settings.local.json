@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx create-react-app frontend --template typescript)",
+      "Bash(npx tailwindcss init -p)",
+      "Bash(npm run prisma:migrate:*)",
+      "Bash(psql:*)",
+      "Bash(where:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npm run prisma:generate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(node setup-db.js:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(node fresh-setup.js:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(node check-db.js:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(taskkill:*)",
+      "Bash(cp:*)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
