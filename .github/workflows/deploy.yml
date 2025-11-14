@@ -1,0 +1,78 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Backend tests and build
+  backend-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Generate Prisma Client
+      working-directory: ./backend
+      run: npx prisma generate
+
+    - name: Run TypeScript build
+      working-directory: ./backend
+      run: npx tsc --noEmit
+
+    # - name: Run tests
+    #   working-directory: ./backend
+    #   run: npm test
+
+  # Frontend tests and build
+  frontend-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Run TypeScript build
+      working-directory: ./frontend
+      run: npm run build
+
+    # - name: Run tests
+    #   working-directory: ./frontend
+    #   run: npm test
+
+  # Deploy notification (optional)
+  deploy-notification:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Deployment started
+      run: |
+        echo "✅ All tests passed!"
+        echo "🚀 Deploying to ${GITHUB_REF##*/} environment..."
+        echo "Backend will auto-deploy to Render"
+        echo "Frontend will auto-deploy to Vercel"

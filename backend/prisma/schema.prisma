@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -39,7 +39,7 @@ model Text {
   type      String?
   edition   String?
   url       String?
-  metadata  String?  // JSON stored as string in SQLite
+  metadata  Json?    @db.JsonB
   createdAt DateTime @default(now()) @map("created_at")
 
   comments      Comment[]
